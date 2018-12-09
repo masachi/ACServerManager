@@ -3,8 +3,8 @@ module.exports = {
   contentPath: '',
   useLocalContent: 'true',
   sTrackerPath: '',
-  username: '',
-  password: '',
+  username: process.env.USERNAME,
+  password: proecss.env.PASSWORD,
   url: 'http://localhost',
   port: 42555
 };

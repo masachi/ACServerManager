@@ -1,8 +1,8 @@
 FROM ubuntu:xenial
 
-MAINTAINER John Walsh <pringlez@github.com>
-
 ENV DEBIAN_FRONTEND=noninteractive
+ENV USERNAME dalao
+ENV PASSWORD zanmeidalao
 
 # Install System Updates & Packages
 RUN groupadd -r gsa && useradd -r -d /home/gsa -g gsa gsa
@@ -18,8 +18,6 @@ ENV ACMANAGER_PORT=${ACMANAGER_PORT}
 
 # Args & Meta
 ARG VCS_REF
-LABEL org.label-schema.vcs-ref=$VCS_REF \
-    org.label-schema.vcs-url="https://github.com/Pringlez/ACServerManager"
 
 # Install NodeJS, NPM & PM2
 RUN apt-get install python-software-properties
