@@ -1,0 +1,12 @@
+{
+	"name": "Nurburgring - GP",
+	"description": "Nuerburgring",
+	"tags" : ["original","circuit","Germany"],
+	"geotags": ["lat", "lon"],
+	"country": "Germany",
+	"city": "Nurburg",
+	"length": "5148",
+	"width": "14",
+	"pitboxes": "24",
+	"run": "clockwise"
+}

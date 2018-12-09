@@ -66,6 +66,24 @@
 								<p>Advanced</p>
 							</a>
 						</li>
+                        <li>
+                            <a href="templates.html">
+                                <i class="pe-7s-copy-file"></i>
+                                <p>Templates</p>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="tracks.html">
+                                <i class="pe-7s-graph1"></i>
+                                <p>Tracks</p>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="cars.html">
+                                <i class="pe-7s-car"></i>
+                                <p>Cars</p>
+                            </a>
+                        </li>
 						<li>
 							<a href="help.html">
 								<i class="pe-7s-help1"></i>
@@ -103,7 +121,6 @@
 						<form>
 							<fieldset>
 								<legend>Assetto Corsa Server</legend>
-								
 								<div class="row">
 									<div class="col-sm-2">
 										<p class="lead" ng-class="acServerStatus ? 'bg-success' : 'bg-danger'">{{acServerStatus === 1 ? 'Running' : acServerStatus === 0 ? 'Stopped' : 'Loading...'}}</p>
@@ -130,7 +147,6 @@
 							
 							<fieldset class="top10" ng-hide="sTrackerServerStatus === -2">
 								<legend>sTracker Server</legend>
-								
 								<div class="row">
 									<div class="col-sm-2">
 										<p class="lead" ng-class="sTrackerServerStatus ? 'bg-success' : 'bg-danger'">{{sTrackerServerStatus === 1 ? 'Running' : acServerStatus === 0 ? 'Stopped' : 'Loading...'}}</p>
@@ -157,13 +173,21 @@
 
 							<fieldset class="top10" ng-show="acServerStatus === 1">
 								<legend>Server Status</legend>
-								
 								<div class="row">
 									<div class="col-sm-12">
 										<p>Current Session: {{serverStatus.session}}</p>
 									</div>
 								</div>
 							</fieldset>  
+
+              <fieldset class="top10">
+                <div class="row">
+                  <div class="col-sm-12">
+                    <p>Server log (last 2000 lines):</p>
+                    <pre>{{serverStatus.log}}</pre>
+                  </div>
+                </div>
+              </fieldset>
 						</form>
 					</div>
 				</div>
@@ -198,15 +222,16 @@
 		</div>
 	</body>
 
-    <script src="js/jquery-1.10.2.js" type="text/javascript"></script>
+    <script src="js/jquery-1.12.4.min.js" type="text/javascript"></script>
 	<script src="js/bootstrap.min.js" type="text/javascript"></script>
 	<script src="js/bootstrap-checkbox-radio-switch.js"></script>
-	<script src="js/chartist.min.js"></script>
     <script src="js/bootstrap-notify.js"></script>
 	<script src="js/light-bootstrap-dashboard.js"></script>
 	<script src="js/angular/angular.min.js"></script>
+    <script src="js/ng-file-upload-shim.min.js"></script>
+    <script src="js/ng-file-upload.min.js"></script>
 	<script src="js/angular/angular-resource.min.js"></script>
-	<script src="js/angular/ui-bootstrap-tpls-0.13.0.min.js"></script>
+	<script src="js/angular/ui-bootstrap-tpls-2.5.0.min.js"></script>
 	<script src="js/angular/show-errors.min.js"></script>
 	<script src="app/app.js"></script>
 	<script src="app/angular-toggle-switch.js"></script>

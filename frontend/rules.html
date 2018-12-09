@@ -67,6 +67,24 @@
 								<p>Advanced</p>
 							</a>
 						</li>
+                        <li>
+                            <a href="templates.html">
+                                <i class="pe-7s-copy-file"></i>
+                                <p>Templates</p>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="tracks.html">
+                                <i class="pe-7s-graph1"></i>
+                                <p>Tracks</p>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="cars.html">
+                                <i class="pe-7s-car"></i>
+                                <p>Cars</p>
+                            </a>
+                        </li>
 						<li>
 							<a href="help.html">
 								<i class="pe-7s-help1"></i>
@@ -104,7 +122,6 @@
 						<form ng-submit="submit()" name="form" data-toggle="validator">
 							<fieldset>
 								<legend>Driver Assists</legend>
-								
 								<div class="row">
 									<div class="col-sm-6">
 										<div class="form-group">
@@ -162,7 +179,6 @@
 							
 							<fieldset class="top10">
 								<legend>Dynamic Track</legend>
-								
 								<div class="row">
 									<div class="col-sm-2">
 										<div class="checkbox">
@@ -206,7 +222,6 @@
 							
 							<fieldset class="top10">
 								<legend>Racing Rules</legend>
-								
 								<div class="row">
 									<div class="col-sm-3">
 										<div class="form-group">
@@ -244,22 +259,13 @@
 									
 									<div class="col-sm-3">
 										<div class="form-group">
-											<label>Race Gas Penalty</label>
+											<label>Race Gas Penalty Disabled</label>
 											<select class="form-control" ng-model="server.RACE_GAS_PENALTY_DISABLED">
-												<option value="0">Enabled</option>
-												<option value="1">Disabled</option>
+												<option value="0">False</option>
+												<option value="1">True</option>
 											</select>
 										 </div>
 									</div>
-									
-									<div class="col-sm-3">
-										<div class="form-group" show-errors>
-											<label>Max Contacts Per KM</label>
-											<input class="form-control" name="max_contacts_per_km" ng-model="server.MAX_CONTACTS_PER_KM" required>
-										</div>
-									</div>
-
-									
 								</div>
 							</fieldset>
 							
@@ -302,15 +308,16 @@
 		</div>
 	</body>
 
-	<script src="js/jquery-1.10.2.js" type="text/javascript"></script>
+	<script src="js/jquery-1.12.4.min.js" type="text/javascript"></script>
 	<script src="js/bootstrap.min.js" type="text/javascript"></script>
-	<script src="js/bootstrap-switch.js"></script>
-	<script src="js/chartist.min.js"></script>
+	<script src="js/bootstrap-checkbox-radio-switch.js"></script>
     <script src="js/bootstrap-notify.js"></script>
 	<script src="js/light-bootstrap-dashboard.js"></script>
 	<script src="js/angular/angular.min.js"></script>
+    <script src="js/ng-file-upload-shim.min.js"></script>
+    <script src="js/ng-file-upload.min.js"></script>
 	<script src="js/angular/angular-resource.min.js"></script>
-	<script src="js/angular/ui-bootstrap-tpls-0.13.0.min.js"></script>
+	<script src="js/angular/ui-bootstrap-tpls-2.5.0.min.js"></script>
 	<script src="js/angular/show-errors.min.js"></script>
 	<script src="app/app.js"></script>
 	<script src="app/angular-toggle-switch.js"></script>

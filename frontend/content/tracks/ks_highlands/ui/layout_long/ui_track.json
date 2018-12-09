@@ -1,0 +1,12 @@
+ {
+	"name": "Highlands Long",
+	"description": "Highlands long layout",
+	"tags" : ["circuit","original","Scotland"],
+	"geotags": ["lat", "lon"],
+	"country": "Scotland",
+	"city": "Fantasy",
+	"length": "12191",
+	"width": "10",
+	"pitboxes": "24",
+	"run": "clockwise"
+}

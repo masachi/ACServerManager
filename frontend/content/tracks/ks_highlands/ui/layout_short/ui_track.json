@@ -1,0 +1,12 @@
+ {
+	"name": "Highlands Short",
+	"description": "Highlands short layout",
+	"tags" : ["circuit","original","drift","Scotland"],
+	"geotags": ["lat", "lon"],
+	"country": "Scotland",
+	"city": "Fantasy",
+	"length": "1714",
+	"width": "10",
+	"pitboxes": "24",
+	"run": "clockwise"
+}

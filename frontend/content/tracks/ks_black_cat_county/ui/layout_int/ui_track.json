@@ -1,0 +1,12 @@
+ {
+	"name": "Black Cat County",
+	"description": "Fictional U.S.A. Road",
+	"tags" : ["circuit","drift","original","usa"],
+	"geotags": ["lat", "lon"],
+	"country": "U.S.A.",
+	"city": "Los Angeles",
+	"length": "6478",
+	"width": "15",
+	"pitboxes": "24",
+	"run": "anti-clockwise"
+}

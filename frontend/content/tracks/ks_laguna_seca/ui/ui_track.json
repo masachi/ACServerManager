@@ -1,0 +1,12 @@
+{
+	"name": "Laguna Seca",
+	"description": "Mazda Raceway Laguna Seca",
+	"tags" : ["circuit","original","drift","Usa"],
+	"geotags": ["lat", "lon"],
+	"country": "California, Usa",
+	"city": "Monterey",
+	"length": "3.602",
+	"width": "11",
+	"pitboxes": "24",
+	"run": "anti-clockwise"
+}

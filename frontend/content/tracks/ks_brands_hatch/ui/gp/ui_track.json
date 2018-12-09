@@ -1,0 +1,12 @@
+{
+	"name": "Brands Hatch - GP",
+	"description": "Brands Hatch Circuit",
+	"tags" : ["circuit","original","drift","Great Britain"],
+	"geotags": ["lat", "lon"],
+	"country": "Great Britain",
+	"city": "Fawkham",
+	"length": "3908",
+	"width": "11",
+	"pitboxes": "24",
+	"run": "clockwise"
+}

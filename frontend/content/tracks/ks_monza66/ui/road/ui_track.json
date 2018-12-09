@@ -1,0 +1,12 @@
+{
+	"name": "Monza 1966 - Road Course",
+	"description": "Autodromo di Monza",
+	"tags" : ["circuit","original","historic","Italy"],
+	"geotags": ["lat", "lon"],
+	"country": "Italy",
+	"city": "Monza (MI)",
+	"length": "5793",
+	"width": "12",
+	"pitboxes": "25",
+	"run": "clockwise"
+}

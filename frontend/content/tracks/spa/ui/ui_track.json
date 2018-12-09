@@ -1,0 +1,12 @@
+ {
+	"name": "Spa",
+	"description": "Spa-Francorchamps",
+	"tags" : ["circuit","original","Belgium"],
+	"geotags": ["lat", "lon"],
+	"country": "Belgium",
+	"city": "Francorchamps",
+	"length": "7004",
+	"width": "15",
+	"pitboxes": "24",
+	"run": "clockwise"
+}

@@ -67,6 +67,24 @@
 								<p>Advanced</p>
 							</a>
 						</li>
+                        <li>
+                            <a href="templates.html">
+                                <i class="pe-7s-copy-file"></i>
+                                <p>Templates</p>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="tracks.html">
+                                <i class="pe-7s-graph1"></i>
+                                <p>Tracks</p>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="cars.html">
+                                <i class="pe-7s-car"></i>
+                                <p>Cars</p>
+                            </a>
+                        </li>
 						<li>
 							<a href="help.html">
 								<i class="pe-7s-help1"></i>
@@ -104,39 +122,30 @@
 						<form ng-submit="submit()" name="form" data-toggle="validator">
 							<fieldset>
 								<legend>Add Player</legend>
-								
 								<div class="row">
-									<div class="col-sm-3">
+									<div class="col-sm-4">
 										<div class="form-group">
-											<label>Name</label> <a href="#" title="Driver Manager" data-toggle="modal" data-target="#playerManager"><span class="glyphicon glyphicon-user" aria-hidden="true"> Player Manager</span></a>
+											<label>Name</label> <a href="#" title="Driver Manager" data-toggle="modal" data-target="#playerManager"></a>
 											<input class="form-control" ng-model="newEntry.DRIVERNAME"/>
 										</div>
 									</div>
 									
-									<div class="col-sm-3">
+									<div class="col-sm-4">
 										<div class="form-group">
 											<label>Team</label>
 											<input class="form-control" ng-model="newEntry.TEAM"/>
 										</div>
 									</div>
 									
-									<div class="col-sm-3">
+									<div class="col-sm-4">
 										<div class="form-group">
 											<label>GUID</label>
 											<input class="form-control" ng-model="newEntry.GUID"/>
 										</div>
 									</div>
-									
-									<div class="col-sm-3">
-										<div class="form-group">
-											<label>Ballast (Kg)</label>
-											<input type="number" min="0" required class="form-control" ng-model="newEntry.BALLAST"/>
-										</div>
-									</div>
-								</div>
-									
+                </div>
 								<div class="row">
-									<div class="col-sm-5">
+									<div class="col-sm-3">
 										<div class="form-group">
 											<label>Car</label>
 											<select class="form-control" ng-model="newEntry.MODEL" ng-options="car as car for car in cars" ng-change="selectedCarChanged()"></select>
@@ -157,7 +166,7 @@
 										</div>
 									</div>
 									
-									<div class="col-sm-1">
+									<div class="col-sm-2">
 										<label>Random Skin</label>
 										<div class="checkbox top30">
 											<label>
@@ -165,10 +174,8 @@
 											</label>
 										</div>
 									</div>
-								</div>
-											
-								<div class="row">
-									<div class="col-sm-4">
+
+									<div class="col-sm-2">
 										<label>Spectator</label>
 										<div class="checkbox">
 											<label>
@@ -176,6 +183,22 @@
 											</label>
 										</div>
 									</div>
+								</div>
+											
+								<div class="row">
+									<div class="col-sm-2">
+										<div class="form-group">
+											<label>Ballast (Kg)</label>
+											<input type="number" min="0" required class="form-control" ng-model="newEntry.BALLAST"/>
+										</div>
+									</div>
+									<div class="col-sm-2">
+										<div class="form-group">
+											<label>Restrictor (0-100%)</label>
+											<input type="number" min="0" max="100" required class="form-control" ng-model="newEntry.RESTRICTOR"/>
+										</div>
+									</div>
+
 								</div>
 										
 								<div class="row top30">
@@ -198,6 +221,7 @@
 														<th>Skin</th>
 														<th>Spectator</th>
 														<th>Ballast</th>
+                            <th>Restrictor</th>
 														<th></th>
 													</tr>
 												</thead>
@@ -205,13 +229,32 @@
 												<tbody>
 													<tr ng-repeat="entry in entryList">
 														<td>{{$index + 1}}</td>
-														<td>{{entry.DRIVERNAME}}</td>
-														<td>{{entry.TEAM}}</td>
-														<td>{{entry.GUID}}</td>
-														<td>{{entry.MODEL}}</td>
-														<td>{{entry.SKIN}}</td>
-														<td>{{entry.SPECTATOR_MODE ? 'Yes' : 'No'}}</td>
-														<td>{{entry.BALLAST}}</td>
+                            <td>
+                              <input class="form-control" ng-model="entry.DRIVERNAME" />
+                            </td>
+                            <td>
+                              <input class="form-control" ng-model="entry.TEAM" />
+                            </td>
+                            <td>
+                              <input class="form-control" ng-model="entry.GUID" />
+                            </td>
+                            <td>
+                              <select class="form-control" ng-model="entry.MODEL" ng-options="car as car for car in cars"></select>
+                            </td>
+                            <td>
+                              <select class="form-control" ng-disabled="random" ng-model="entry.SKIN" ng-options="skin as skin for skin in skins"></select>
+                            </td>
+                            <td class="toggle-switch">
+                              <label>
+                                <toggle-switch class="switch-large" ng-model="entry.SPECTATOR_MODE"></toggle-switch>
+                              </label>
+                            </td>
+                            <td>
+                              <input class="form-control" type="number" min="0" ng-model="entry.BALLAST" />
+                            </td>
+                            <td>
+                              <input class="form-control" type="number" min="0" max="100" ng-model="entry.RESTRICTOR" />
+                            </td>
 														<td><a title="Remove" href="javascript:void(0);" ng-click="removeEntry($index)"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span><a/></td>
 													</tr>
 												</tbody>
@@ -237,8 +280,6 @@
 						</form>
 					</div>
 				</div>
-				
-				
 
 				<footer class="footer">
 					<div class="container-fluid">
@@ -282,7 +323,6 @@
 					<form ng-submit="addDriver()" name="createForm" data-toggle="validator">
 						<fieldset>
 							<legend>Create Driver</legend>
-							
 							<div class="row">
 								<div class="col-sm-4">
 									<div class="form-group" show-errors>
@@ -316,7 +356,6 @@
 							
 					<fieldset class="top30">
 						<legend>Driver List</legend>
-						
 						<div class="row">
 							<div class="col-sm-12">
 								<p ng-hide="drivers.length">There are currently no saved drivers</p>
@@ -355,15 +394,16 @@
 		</div>
 	</div>
 	
-	<script src="js/jquery-1.10.2.js" type="text/javascript"></script>
+	<script src="js/jquery-1.12.4.min.js" type="text/javascript"></script>
 	<script src="js/bootstrap.min.js" type="text/javascript"></script>
-	<script src="js/bootstrap-switch.js"></script>
-	<script src="js/chartist.min.js"></script>
-	<script src="js/bootstrap-notify.js"></script>
+	<script src="js/bootstrap-checkbox-radio-switch.js"></script>
+    <script src="js/bootstrap-notify.js"></script>
 	<script src="js/light-bootstrap-dashboard.js"></script>
 	<script src="js/angular/angular.min.js"></script>
+    <script src="js/ng-file-upload-shim.min.js"></script>
+    <script src="js/ng-file-upload.min.js"></script>
 	<script src="js/angular/angular-resource.min.js"></script>
-	<script src="js/angular/ui-bootstrap-tpls-0.13.0.min.js"></script>
+	<script src="js/angular/ui-bootstrap-tpls-2.5.0.min.js"></script>
 	<script src="js/angular/show-errors.min.js"></script>
 	<script src="app/app.js"></script>
 	<script src="app/angular-toggle-switch.js"></script>

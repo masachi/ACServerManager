@@ -1,0 +1,12 @@
+{
+	"name": "Red Bull Ring National",
+	"description": "Red Bull Ring Südschleife National Circuit",
+	"tags" : ["circuit","original","drift","Austria"],
+	"geotags": ["lat", "lon"],
+	"country": "Austria",
+	"city": "Spielberg",
+	"length": "2336",
+	"width": "12",
+	"pitboxes": "24",
+	"run": "clockwise"
+}

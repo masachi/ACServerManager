@@ -1,0 +1,12 @@
+{
+	"name": "Red Bull Ring GP",
+	"description": "Red Bull Ring Grand Prix Cricuit",
+	"tags" : ["circuit","original","drift","Austria"],
+	"geotags": ["lat", "lon"],
+	"country": "Austria",
+	"city": "Spielberg",
+	"length": "4326",
+	"width": "12",
+	"pitboxes": "24",
+	"run": "clockwise"
+}

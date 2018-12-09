@@ -12,13 +12,13 @@ angular.module('toggle-switch', ['ng']).directive('toggleSwitch', ['$compile', f
 			onChange: '&'
 		},
 		template:
-					'<div class="ats-switch" ng-click="toggle()" ng-keypress="onKeyPress($event)" ng-class="{ \'disabled\': isDisabled }" role="switch" aria-checked="{{!!model}}">' +
-						'<div class="switch-animate" ng-class="{\'switch-off\': !model, \'switch-on\': model}">' +
-							'<span class="switch-left"></span>' +
-							'<span class="knob"></span>' +
-							'<span class="switch-right"></span>' +
-						'</div>' +
-					'</div>',
+			'<div class="ats-switch" ng-click="toggle()" ng-keypress="onKeyPress($event)" ng-class="{ \'disabled\': isDisabled }" role="switch" aria-checked="{{!!model}}">' +
+				'<div class="switch-animate" ng-class="{\'switch-off\': !model, \'switch-on\': model}">' +
+					'<span class="switch-left"></span>' +
+					'<span class="knob"></span>' +
+					'<span class="switch-right"></span>' +
+				'</div>' +
+			'</div>',
 		compile: function(element, attrs) {
 			if (angular.isUndefined(attrs.onLabel)) {
 				attrs.onLabel = 'Yes';

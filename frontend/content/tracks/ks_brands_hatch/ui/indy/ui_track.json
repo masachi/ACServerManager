@@ -1,0 +1,12 @@
+{
+	"name": "Brands Hatch - Indy",
+	"description": "Brands Hatch Circuit",
+	"tags" : ["circuit","original","drift","Great Britain"],
+	"geotags": ["lat", "lon"],
+	"country": "Great Britain",
+	"city": "Fawkham",
+	"length": "1929",
+	"width": "11",
+	"pitboxes": "24",
+	"run": "clockwise"
+}

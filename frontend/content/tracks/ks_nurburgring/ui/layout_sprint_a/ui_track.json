@@ -1,0 +1,12 @@
+{
+	"name": "Nurburgring - Sprint",
+	"description": "Nuerburgring",
+	"tags" : ["original","circuit","Germany"],
+	"geotags": ["lat", "lon"],
+	"country": "Germany",
+	"city": "Nurburg",
+	"length": "3629",
+	"width": "14",
+	"pitboxes": "24",
+	"run": "clockwise"
+}

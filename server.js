@@ -1,5 +1,6 @@
 var express = require('express');
 var fs = require('fs');
+var copyFileSync = require('fs-copy-file-sync'); // shim in case user has node < v8.5.0
 var ini = require('ini');
 var multiLine = require('multi-ini');
 var bodyParser = require('body-parser');
@@ -7,7 +8,12 @@ var childProcess = require('child_process');
 var basicAuth = require('basic-auth-connect');
 var jsonfile = require('jsonfile');
 var util = require('util');
+var uuidv4 = require('uuid/v4');
 var extend = require('node.extend');
+var multer = require('multer');
+var mkdirp = require('mkdirp');
+var rimraf = require('rimraf');
+var _ = require('lodash');
 
 var settings = require('./settings');
 
@@ -18,6 +24,19 @@ var sTrackerPath = buildSTrackerPath(settings.sTrackerPath);
 var serverPath = buildServerPath(settings.serverPath);
 var contentPath = buildContentPath(serverPath);
 
+var storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        // Each uploaded track/car users unique uuidv4 set for request
+        var uploadDir = './uploads/' + req.uuid;
+        req.uploadDir = uploadDir;
+        mkdirp.sync(uploadDir);
+        cb(null, uploadDir);
+    }
+});
+var upload = multer({
+    storage: storage
+});
+
 var isRunningOnWindows = /^win/.test(process.platform);
 
 var acServerStatus = 0;
@@ -25,6 +44,7 @@ var sTrackerServerStatus = 0;
 var acServerPid;
 var sTrackerServerPid;
 var acServerLogName;
+var acServerLog = [];
 
 var currentSession;
 var modTyres;
@@ -63,10 +83,18 @@ function saveEntryList() {
 	}
 }
 
+function saveModTyres() {
+    try {
+        fs.writeFileSync(serverPath + 'manager/mod_tyres.ini', ini.stringify(modTyres).replace(/\\/gi, ''));
+    } catch (e) {
+        console.log('Error - ' + e);
+    }
+}
+
 function getDirectories(srcpath) {
 	try {
 		return fs.readdirSync(srcpath).filter(function (file) {
-			return fs.statSync(srcpath + "/" + file).isDirectory();
+			return fs.statSync(srcpath + '/' + file).isDirectory();
 		});
 	} catch (e) {
 		console.log('Error - ' + e);
@@ -87,7 +115,11 @@ function writeLogFile(filename, message) {
 		fs.appendFile(__dirname + '/logs/' + filename, message + '\r\n', function (err) {});
 	} catch (e) {
 		console.log('Error - ' + e);
-	}	
+	}
+}
+
+function updateServerLog(message) {
+    acServerLog = _.takeRight(_.concat(acServerLog, message), 2000);
 }
 
 function buildSTrackerPath(sTrackerPath) {
@@ -117,10 +149,34 @@ function buildContentPath(serverPath) {
 	return contentPath;
 }
 
+function checkLocalContentPath(contentPath) {
+	if(settings.useLocalContent === 'true'){
+		contentPath = 'frontend/content';
+	}
+	return contentPath;
+}
+
+function removeSlashes(str) {
+    var newStr = str;
+    while (newStr.search('/') != -1) {
+        newStr = newStr.replace('/', '');
+    }
+    return newStr;
+}
+
 var app = express();
 if (username !== '' && password !== '') {
 	app.use(basicAuth(username, password));
 }
+app.use(function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", settings.url + ":" + settings.port);
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
+app.use(function (req, res, next) {
+    req.uuid = uuidv4();
+    next();
+});
 app.use(bodyParser.json());
 app.use(express.static(__dirname + '/frontend'));
 
@@ -152,7 +208,10 @@ app.get('/api/server', function (req, res) {
 app.get('/api/server/status', function (req, res) {
 	try {
 		res.status(200);
-		res.send({ session: currentSession });
+		res.send({
+            session: currentSession,
+            log: _.join(acServerLog, '')
+        });
 	} catch (e) {
 		console.log('Error: GET/api/server/status - ' + e);
 		res.status(500);
@@ -178,7 +237,7 @@ app.post('/api/server', function (req, res) {
 		for (var param in req.body) {
 			config.SERVER[param.toUpperCase()] = req.body[param];
 		}
-		
+
 		saveConfig();
 		res.status(200);
 		res.send('OK');
@@ -530,7 +589,7 @@ app.get('/api/weather', function (req, res) {
 		var weather = [];
 
 		Object.keys(config).forEach(function (key) {
-			if (key.indexOf("WEATHER_") === 0) {
+			if (key.indexOf('WEATHER_') === 0) {
 				weather.push(config[key]);
 			}
 		});
@@ -548,7 +607,7 @@ app.get('/api/weather', function (req, res) {
 app.post('/api/weather', function (req, res) {
 	try {
 		Object.keys(config).forEach(function (key) {
-			if (key.indexOf("WEATHER_") === 0) {
+			if (key.indexOf('WEATHER_') === 0) {
 				delete config[key];
 			}
 		});
@@ -570,7 +629,8 @@ app.post('/api/weather', function (req, res) {
 // get tracks available on server
 app.get('/api/tracks', function (req, res) {
 	try {
-		var trackNames = fs.readdirSync(contentPath + "/tracks");
+		contentPath = checkLocalContentPath(contentPath);
+		var trackNames = fs.readdirSync(contentPath + '/tracks');
 		var tracks = [];
 
 		for (var trackName in trackNames) {
@@ -579,11 +639,11 @@ app.get('/api/tracks', function (req, res) {
 			};
 
 			try {
-				var configs = getDirectories(contentPath + "/tracks/" + trackNames[trackName] + "/ui");
+				var configs = getDirectories(contentPath + '/tracks/' + trackNames[trackName] + '/ui');
 				track.configs = configs;
 			}
 			catch (e) {
-				//console.log(e);
+				console.log('Track not found: ' + trackName);
 			}
 
 			tracks.push(track);
@@ -601,6 +661,7 @@ app.get('/api/tracks', function (req, res) {
 // get track
 app.get('/api/tracks/:track', function (req, res) {
 	try {
+		contentPath = checkLocalContentPath(contentPath);
 		var trackDetails = fs.readFileSync(contentPath + '/tracks/' + req.params.track + '/ui/ui_track.json', 'utf-8');
 		res.status(200);
 		res.send(trackDetails);
@@ -611,11 +672,29 @@ app.get('/api/tracks/:track', function (req, res) {
 	}
 });
 
+// remove existing track
+app.delete('/api/tracks/:track', function (req, res) {
+    try {
+        var track = removeSlashes(req.params.track);
+        var serverTrackPath = serverPath + 'content/tracks/' + track;
+        var contentTrackPath = checkLocalContentPath(contentPath) + '/tracks/' + track;
+        rimraf.sync(serverTrackPath);
+        rimraf.sync(contentTrackPath);
+        res.status(200);
+        res.send('OK');
+    } catch (e) {
+        console.log('Error: DELETE/api/track/:track - ' + e);
+        res.status(500);
+        res.send('Application error');
+    }
+});
+
 // get track image
 app.get('/api/tracks/:track/image', function (req, res) {
 	try {
-		res.status(200);;
+		contentPath = checkLocalContentPath(contentPath);
 		var image = fs.readFileSync(contentPath + '/tracks/' + req.params.track + '/ui/preview.png');
+		res.status(200);
 		res.contentType('image/jpeg');
 		res.send(image);
 	} catch (e) {
@@ -628,6 +707,7 @@ app.get('/api/tracks/:track/image', function (req, res) {
 // get track config
 app.get('/api/tracks/:track/:config', function (req, res) {
 	try {
+		contentPath = checkLocalContentPath(contentPath);
 		var trackDetails = fs.readFileSync(contentPath + '/tracks/' + req.params.track + '/ui/' + req.params.config + '/ui_track.json', 'utf-8');
 		res.status(200);
 		res.send(trackDetails);
@@ -641,8 +721,9 @@ app.get('/api/tracks/:track/:config', function (req, res) {
 // get track config image
 app.get('/api/tracks/:track/:config/image', function (req, res) {
 	try {
-		res.status(200);;
+		contentPath = checkLocalContentPath(contentPath);
 		var image = fs.readFileSync(contentPath + '/tracks/' + req.params.track + '/ui/' + req.params.config + '/preview.png');
+		res.status(200);
 		res.contentType('image/jpeg');
 		res.send(image);
 	} catch (e) {
@@ -652,10 +733,88 @@ app.get('/api/tracks/:track/:config/image', function (req, res) {
 	}
 });
 
+function copyTrack(serverTrackPath, contentTrackPath, surfaces, drs_zones, preview, ui_track) {
+    mkdirp.sync(serverTrackPath);
+    mkdirp.sync(contentTrackPath);
+    copyFileSync(surfaces.path, serverTrackPath + 'surfaces.ini');
+    if (drs_zones !== null && drs_zones !== undefined) {
+        copyFileSync(drs_zones.path, serverTrackPath + 'drs_zones.ini');
+    }
+    copyFileSync(preview.path, contentTrackPath + 'preview.png');
+    copyFileSync(ui_track.path, contentTrackPath + 'ui_track.json');
+}
+
+function addSingleLayoutTrack(track) {
+    var serverTrackPath = serverPath + 'content/tracks/' + track.name + '/data/';
+    var contentTrackPath = checkLocalContentPath(contentPath) + '/tracks/' + track.name + '/ui/';
+    copyTrack(serverTrackPath,
+              contentTrackPath,
+              track.layouts[0].surfaces,
+              track.layouts[0].drs_zones,
+              track.layouts[0].preview,
+              track.layouts[0].ui_track);
+}
+
+function addMultiLayoutTrack(track) {
+    var serverTrackPath = serverPath + 'content/tracks/' + track.name + '/';
+    var contentTrackPath = checkLocalContentPath(contentPath) + '/tracks/' + track.name + '/ui/';
+
+    _.forEach(track.layouts, function(layout) {
+        var serverLayoutPath = serverTrackPath + layout.name + '/data/';
+        var contentLayoutPath = contentTrackPath + layout.name + '/';
+        copyTrack(serverLayoutPath,
+                  contentLayoutPath,
+                  layout.surfaces,
+                  layout.drs_zones,
+                  layout.preview,
+                  layout.ui_track);
+    });
+}
+
+// store uploaded file for track
+app.post('/api/tracks', upload.any(), function (req, res) {
+    try {
+        var track = {
+            name: removeSlashes(req.body.track.name),
+            layouts: _.map(req.body.track.layouts, function(layout) {
+                if (layout.name === 'null') {
+                    layout.name = null;
+                } else {
+                    layout.name = removeSlashes(layout.name);
+                }
+                return layout;
+            })
+        };
+        _.forEach(req.files, function(file) {
+            var parts = _.split(file.fieldname, '][');
+            var idx = _.parseInt(parts[1]);
+            var key = parts[2].substr(0, parts[2].length - 1);
+            track.layouts[idx][key] = file;
+        });
+
+        if (track.layouts.length > 1) {
+            addMultiLayoutTrack(track);
+        } else if (track.layouts.length === 1) {
+            addSingleLayoutTrack(track);
+        } else {
+            throw 'Invalid layouts for track';
+        }
+
+        rimraf.sync('./uploads/' + req.uuid);
+        res.status(200);
+        res.send('OK');
+    } catch (e) {
+        console.log('Error: POST/api/tracks/new - ' + e);
+        res.status(500);
+        res.send('Application error');
+    }
+});
+
 // get cars available on server
 app.get('/api/cars', function (req, res) {
 	try {
-		var cars = fs.readdirSync(contentPath + "/cars");
+		contentPath = buildContentPath(serverPath);
+		var cars = fs.readdirSync(contentPath + '/cars');
 		res.status(200);
 		res.send(cars);
 	} catch (e) {
@@ -665,15 +824,81 @@ app.get('/api/cars', function (req, res) {
 	}
 });
 
+function mkdirCarSkins(car) {
+    var skinPath = checkLocalContentPath(contentPath) + '/cars/' + car.name + '/skins/';
+    _.forEach(car.skins, function(skin) {
+        mkdirp.sync(skinPath + skin);
+    });
+}
+
+function modifyCarModTyres(car) {
+    if (!modTyres) {
+        modTyres = {};
+    }
+    var carTyres = ini.parse(car.mod_tyres);
+    if (carTyres[car.name] !== null && carTyres[car.name] !== undefined) {
+        modTyres[car.name] = carTyres[car.name];
+        saveModTyres();
+    }
+}
+
+function copyCarFiles(serverCarPath, files) {
+    mkdirp.sync(serverCarPath);
+    _.forEach(files, function(file) {
+        copyFileSync(file.path, serverCarPath + file.originalname);
+    });
+}
+
+// add new car
+app.post('/api/cars', upload.any(), function (req, res) {
+    try {
+        var car = {
+            name: removeSlashes(req.body.car.name),
+            mod_tyres: req.body.car.mod_tyres,
+            skins: _.map(req.body.car.skins, removeSlashes)
+        };
+        var files = _.groupBy(req.files, function(value) {
+            return value.fieldname.split('][')[0].substr(4);
+        });
+        var singleDataFile = false;
+        if (files.data.length === 0) {
+            throw 'No data files with car';
+        } else if (files.data.length === 1) {
+            if (files.data[0].originalname !== 'data.acd') {
+                throw 'No data.acd file with car';
+            }
+            singleDataFile = true;
+        }
+        car.data = files.data;
+
+        mkdirCarSkins(car);
+        modifyCarModTyres(car);
+        var serverCarPath = serverPath + 'content/cars/' + car.name + '/';
+        if (singleDataFile) {
+            copyCarFiles(serverCarPath, car.data);
+        } else {
+            copyCarFiles(serverCarPath + 'data/', car.data);
+        }
+
+        rimraf.sync('./uploads/' + req.uuid);
+        res.status(200);
+        res.send('OK');
+    } catch (e) {
+        console.log('Error: POST/api/cars - ' + e);
+        res.status(500);
+        res.send('Application error');
+    }
+});
+
 // get car skin
 app.get('/api/cars/:car', function (req, res) {
 	try {
 		var skins = {}
 		try {
-			var skins = fs.readdirSync(contentPath + "/cars/" + req.params.car + "/skins");
+			var skins = fs.readdirSync(contentPath + '/cars/' + req.params.car + '/skins');
 		}
 		catch (e) {
-			console.log("Car not found: " + req.params.car);
+			console.log('Car not found: ' + req.params.car);
 		}
 
 		res.status(200);
@@ -683,6 +908,28 @@ app.get('/api/cars/:car', function (req, res) {
 		res.status(500);
 		res.send('Application error');
 	}
+});
+
+// remove existing car
+app.delete('/api/cars/:car', function (req, res) {
+    try {
+        var car = removeSlashes(req.params.car);
+        var serverCarPath = serverPath + 'content/cars/' + car;
+        var contentCarPath = checkLocalContentPath(contentPath) + '/cars/' + car;
+        if (modTyres) {
+            modTyres = _.omit(modTyres, car);
+            saveModTyres();
+        }
+        rimraf.sync(serverCarPath);
+        rimraf.sync(contentCarPath);
+        res.status(200);
+        res.send('OK');
+    }
+    catch (e) {
+		console.log('Error: DELETE/api/cars/:car - ' + e);
+		res.status(500);
+		res.send('Application error');
+    }
 });
 
 // get entry list
@@ -709,9 +956,9 @@ app.post('/api/entrylist', function (req, res) {
 		saveEntryList();
 	}
 	catch (e) {
-		console.log("Failed to save entry list");
+		console.log('Error: POST/api/entrylist - ' + e);
 		res.status(500);
-		res.send("Failed to save entry list")
+		res.send('Application error')
 	}
 
 	res.status(200);
@@ -733,9 +980,9 @@ app.get('/api/drivers', function (req, res) {
 		});
 	}
 	catch (e) {
-		console.log("Failed to retrieve drivers");
+		console.log('Error: GET/api/drivers - ' + e);
 		res.status(500);
-		res.send("Failed to retrieve drivers");
+		res.send('Application error');
 	}
 });
 
@@ -764,9 +1011,9 @@ app.post('/api/drivers', function (req, res) {
 		});
 	}
 	catch (e) {
-		console.log("Failed to save drivers");
+		console.log('Error: POST/api/drivers - ' + e);
 		res.status(500);
-		res.send("Failed to save drivers");
+		res.send('Application error');
 	}
 
 	res.status(200);
@@ -778,7 +1025,7 @@ app.delete('/api/drivers/:guid', function (req, res) {
 	try {
 		var guid = req.params.guid;
 		if (!guid) {
-			throw "GUID not provided";
+			throw 'GUID not provided';
 		}
 
 		jsonfile.readFile(__dirname + '/drivers.json', function (err, data) {
@@ -797,7 +1044,7 @@ app.delete('/api/drivers/:guid', function (req, res) {
 
 				jsonfile.writeFile(__dirname + '/drivers.json', data, function (err) {
 					if (err) {
-						console.error(err);
+						console.error('Error - ' + err);
 						throw err;
 					}
 				});
@@ -807,7 +1054,7 @@ app.delete('/api/drivers/:guid', function (req, res) {
 	catch (e) {
 		console.log('Error: DELETE/api/drivers - ' + e);
 		res.status(500);
-		res.send("Failed to delete driver");
+		res.send('Application error');
 		return;
 	}
 
@@ -838,9 +1085,9 @@ app.get('/api/tyres', function (req, res) {
 		res.send(result)
 	}
 	catch (e) {
-		console.log("Failed to retrieve tyres");
+		console.log('Error: GET/api/tyres - ' + e);
 		res.status(500);
-		res.send("Failed to retrieve tyres");
+		res.send('Application error');
 	}
 });
 
@@ -848,7 +1095,7 @@ app.get('/api/tyres', function (req, res) {
 app.get('/api/acserver/status', function (req, res) {
 	try {
 		res.status(200);
-		res.send({ status: acServerStatus });
+        res.send({ status: acServerStatus });
 	} catch (e) {
 		console.log('Error: GET/api/acserver/status - ' + e);
 		res.status(500);
@@ -859,14 +1106,14 @@ app.get('/api/acserver/status', function (req, res) {
 // start acserver process
 app.post('/api/acserver', function (req, res) {
 	try {
-		console.log("OS is " + process.platform);
+		console.log('OS is ' + process.platform);
 		var acServer = undefined;
 
 		if (isRunningOnWindows) {
-			console.log("Starting Windows Server");
+			console.log('Starting Windows Server');
 			acServer = childProcess.spawn('acServer.exe', { cwd: serverPath });
 		} else {
-			console.log("Starting Linux Server");
+			console.log('Starting Linux Server');
 			acServer = childProcess.spawn('./acServer', { cwd: serverPath });
 		}
 		acServerPid = acServer.pid;
@@ -879,18 +1126,20 @@ app.post('/api/acserver', function (req, res) {
 
 			var dataString = String(data);
 
-			if (dataString.indexOf('OK') !== -1) {
+			if (dataString.indexOf('OK') !== -1 || dataString.indexOf('Server started') !== -1) {
 				acServerStatus = 1;
 			}
-			
-		   if (dataString.indexOf('stracker has been restarted') !== -1) {
+
+		    if (dataString.indexOf('stracker has been restarted') !== -1) {
 				sTrackerServerStatus = 1
 			}
 
 			if (dataString.indexOf('PAGE: /ENTRY') === -1) {
 				//Log to console and file
 				console.log(dataString);
-				writeLogFile('server_' + acServerLogName, getDateTimeString() + ': ' + data);
+                var logEntry = getDateTimeString() + ': ' + data;
+				writeLogFile('server_' + acServerLogName, logEntry);
+                updateServerLog(logEntry);
 
 				//Set current session
 				if (dataString.indexOf('session name') !== -1) {
@@ -898,22 +1147,25 @@ app.post('/api/acserver', function (req, res) {
 					currentSession = session.substr(0, dataString.indexOf('\n')).trim();
 				}
 			}
-
 		});
 		acServer.stderr.on('data', function (data) {
 			console.log('stderr: ' + data);
-			writeLogFile('error_' + acServerLogName, getDateTimeString() + ': ' + data);
+            var logEntry = getDateTimeString() + ': ' + data;
+			writeLogFile('error_' + acServerLogName, logEntry);
+            updateServerLog(logEntry);
 		});
 		acServer.on('close', function (code) {
 			console.log('closing code: ' + code);
+            updateServerLog('Server closed with code: ' + code + '\n');
 		});
 		acServer.on('exit', function (code) {
 			console.log('exit code: ' + code);
+            updateServerLog('Server exited with code: ' + code + '\n');
 			acServerStatus = 0;
 		});
 
 		res.status(200);
-		res.send("OK");
+		res.send('OK');
 	} catch (e) {
 		console.log('Error: POST/api/acserver - ' + e);
 		res.status(500);
@@ -926,11 +1178,11 @@ app.post('/api/acserver/stop', function (req, res) {
 	try {
 		if (acServerPid) {
 			if (isRunningOnWindows) {
-				console.log("Stopping Windows Server");
-				childProcess.spawn("taskkill", ["/pid", acServerPid, '/f', '/t']);
+				console.log('Stopping Windows Server');
+				childProcess.spawn('taskkill', ['/pid', acServerPid, '/f', '/t']);
 			} else {
-				console.log("Stopping Linux Server");
-				childProcess.spawn("kill", [acServerPid]);
+				console.log('Stopping Linux Server');
+				childProcess.spawn('kill', [acServerPid]);
 			}
 
 			acServerPid = undefined;
@@ -938,7 +1190,7 @@ app.post('/api/acserver/stop', function (req, res) {
 		}
 
 		res.status(200);
-		res.send("OK");
+		res.send('OK');
 	} catch (e) {
 		console.log('Error: POST/api/acserver/stop - ' + e);
 		res.status(500);
@@ -961,9 +1213,17 @@ app.get('/api/strackerserver/status', function (req, res) {
 // post start stracker server
 app.post('/api/strackerserver', function (req, res) {
 	try {
-		var sTracker = childProcess.spawn('stracker.exe', ['--stracker_ini', 'stracker.ini'], { cwd: sTrackerPath });
-		sTrackerServerPid = sTracker.pid;
-		
+        var sTracker = undefined;
+
+        if (isRunningOnWindows) {
+            console.log('Starting Windows sTracker');
+    		sTracker = childProcess.spawn('stracker.exe', ['--stracker_ini', 'stracker.ini'], { cwd: sTrackerPath });
+        } else {
+            console.log('Starting Linux sTracker');
+            sTracker = childProcess.spawn('./stracker_linux_x86/stracker', ['--stracker_ini', 'stracker.ini'], { cwd: sTrackerPath });
+        }
+        sTrackerServerPid = sTracker.pid;
+
 		if (sTrackerServerStatus == 0) {
 			sTrackerServerStatus = -1;
 		}
@@ -983,7 +1243,7 @@ app.post('/api/strackerserver', function (req, res) {
 		});
 
 		res.status(200);
-		res.send("OK");
+		res.send('OK');
 	} catch (e) {
 		console.log('Error: POST/api/strackerserver - ' + e);
 		res.status(500);
@@ -995,17 +1255,121 @@ app.post('/api/strackerserver', function (req, res) {
 app.post('/api/strackerserver/stop', function (req, res) {
 	try {
 		if (sTrackerServerPid) {
-			childProcess.spawn("taskkill", ["/pid", sTrackerServerPid, '/f', '/t']);
+            if (isRunningOnWindows) {
+                console.log('Stopping Windows sTracker');
+    			childProcess.spawn('taskkill', ['/pid', sTrackerServerPid, '/f', '/t']);
+            } else {
+                console.log('Stopping Linux sTracker');
+                childProcess.spawn('kill', [sTrackerServerPid]);
+            }
 			sTrackerServerPid = undefined;
 		}
 
 		res.status(200);
-		res.send("OK");
+		res.send('OK');
 	} catch (e) {
 		console.log('Error: POST/api/strackerserver/stop - ' + e);
 		res.status(500);
 		res.send('Application error');
 	}
+});
+
+// list templates
+app.get('/api/templates', function (req, res) {
+    try {
+        contentPath = checkLocalContentPath(contentPath);
+        var templateUuids = fs.readdirSync(contentPath + '/templates');
+        var templates = [];
+
+        for (var idx in templateUuids) {
+            var uuid = templateUuids[idx];
+            var templateFile = contentPath + '/templates/' + uuid + '/config.json';
+            var template = jsonfile.readFileSync(templateFile)
+            template.uuid = uuid;
+            templates.push(template);
+        }
+
+        res.status(200);
+        res.send(templates);
+    } catch (e) {
+        console.log('Error: GET/api/templates - ' + e);
+        res.status(500);
+        res.send('Application error');
+    }
+});
+
+// store current configuration to a new template
+app.post('/api/templates', function (req, res) {
+    try {
+        contentPath = checkLocalContentPath(contentPath);
+        var uuid = uuidv4();
+        var template = {
+            name: req.body.name,
+            description: req.body.description
+        }
+        if (template.name === '') {
+            throw 'Template must have a name!';
+        }
+
+        var templateDir = contentPath + '/templates/' + uuid;
+        // TODO: assert existence and generate new uuidv4?
+        fs.mkdirSync(templateDir);
+        copyFileSync(serverPath + 'cfg/server_cfg.ini', templateDir + '/server_cfg.ini');
+        copyFileSync(serverPath + 'cfg/entry_list.ini', templateDir + '/entry_list.ini');
+        jsonfile.writeFileSync(templateDir + '/config.json', template);
+
+        res.status(200);
+        res.send('OK');
+    } catch (e) {
+        console.log('Error: POST/api/templates - ' + e);
+        res.status(500);
+        res.send('Application error');
+    }
+});
+
+// apply templated configuration
+app.post('/api/templates/:uuid', function (req, res) {
+    try {
+        var uuid = req.params.uuid;
+        if (!uuid) {
+            throw 'UUID not provided';
+        }
+
+        contentPath = checkLocalContentPath(contentPath);
+        var templateDir = contentPath + '/templates/' + uuid;
+	    config =  multiLine.read(templateDir + '/server_cfg.ini', {encoding: 'utf8'});
+	    entryList =  multiLine.read(templateDir + '/entry_list.ini', {encoding: 'utf8'});
+        saveConfig();
+        saveEntryList();
+
+        res.status(200);
+        res.send('OK');
+    } catch (e) {
+        console.log('Error: PUT/api/templates - ' + e);
+        res.status(500);
+        res.send('Application error');
+    }
+});
+
+// delete template based on uuid
+app.delete('/api/templates/:uuid', function (req, res) {
+    try {
+        var uuid = req.params.uuid;
+        if (!uuid) {
+            throw 'UUID not provided';
+        }
+
+        contentPath = checkLocalContentPath(contentPath);
+        var templateDir = contentPath + '/templates/' + uuid;
+        rimraf.sync(templateDir);
+
+        res.status(200);
+        res.send('OK');
+    } catch (e) {
+        console.log('Error: DELETE/api/templates - ' + e);
+        res.status(500);
+        res.send('Application error');
+    }
 });
 
 

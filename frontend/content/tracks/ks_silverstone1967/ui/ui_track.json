@@ -1,0 +1,12 @@
+{
+	"name": "Silverstone 1967",
+	"description": "Historic Circuit of Silverstone",
+	"tags" : ["circuit","original","historic","Great Britain"],
+	"geotags": ["lat", "lon"],
+	"country": "Great Britain",
+	"city": "Silverstone",
+	"length": "4710",
+	"width": "14",
+	"pitboxes": "20",
+	"run": "clockwise"
+}

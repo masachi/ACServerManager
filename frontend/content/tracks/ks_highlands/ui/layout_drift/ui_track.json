@@ -1,0 +1,12 @@
+ {
+	"name": "Highlands Drift",
+	"description": "Highlands drift layout",
+	"tags" : ["circuit","original","drift","Scotland"],
+	"geotags": ["lat", "lon"],
+	"country": "Scotland",
+	"city": "Fantasy",
+	"length": "5167",
+	"width": "10",
+	"pitboxes": "24",
+	"run": "clockwise"
+}

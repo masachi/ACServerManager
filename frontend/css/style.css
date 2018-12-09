@@ -87,6 +87,10 @@ body { padding-top: 0px;}
     text-align: center;
 }
 
+td.toggle-switch label {
+    font-weight: normal;
+}
+
 .checkbox, .checkbox label {
 	padding-left: 0px; !important
 }
@@ -97,4 +101,31 @@ body { padding-top: 0px;}
 
 .checkbox input {
 	display: block; !important
+}
+.drop-box {
+    background: #F8F8F8;
+    border: 5px dashed #DDD;
+    width: 15em;
+    height: 6em;
+    text-align: center;
+    padding: 0;
+    margin: 10px;
+}
+.drop-box > span {
+    height: 2em;
+    width: 100%;
+    padding: 1em 1em;
+    display: block;
+}
+.dragover {
+    border: 5px dashed rgb(255,74,85);
+}
+span.skinName {
+    display: inline-block;
+    margin: 2px;
+}
+pre {
+    max-height: 50em;
+    display: flex;
+    flex-direction: column-reverse;
 }

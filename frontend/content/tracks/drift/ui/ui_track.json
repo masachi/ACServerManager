@@ -1,0 +1,12 @@
+ {
+	"name": "Drift",
+	"description": "Drift Track",
+	"tags" : ["#drift","drift","test track","circuit","original","Japan"],
+	"geotags": ["lat", "lon"],
+	"country": "Japan",
+	"city": "Tokyo",
+	"length": "905",
+	"width": "15",
+	"pitboxes": "18",
+	"run": "DRIFT"
+}

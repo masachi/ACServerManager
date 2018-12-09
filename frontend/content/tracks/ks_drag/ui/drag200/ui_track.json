@@ -1,0 +1,12 @@
+ {
+	"name": "Drag 200m",
+	"description": "fast&furious",
+	"tags" : ["drag","original"],
+	"geotags": ["lat", "lon"],
+	"country": "Italy",
+	"city": "Imola",
+	"length": "200",
+	"width": "15",
+	"pitboxes": "2",
+	"run": "dragstrip"
+}

@@ -1,0 +1,12 @@
+{
+	"name": "Nordschleife - Endurance",
+	"description": "Nurburgring Nordschleife",
+	"tags" : ["original","circuit","Germany"],
+	"geotags": ["50.3356° N", "6.9475° E"],
+	"country": "Germany",
+	"city": "Nurburg",
+	"length": "25378",
+	"width": "15",
+	"pitboxes": "24",
+	"run": "clockwise"
+}

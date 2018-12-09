@@ -1,0 +1,12 @@
+{
+	"name": "Nordschleife - Tourist",
+	"description": "Nurburgring Nordschleife",
+	"tags" : ["A2B","original","circuit","Germany"],
+	"geotags": ["50.3356° N", "6.9475° E"],
+	"country": "Germany",
+	"city": "Nurburg",
+	"length": "19100",
+	"width": "15",
+	"pitboxes": "32",
+	"run": "clockwise"
+}
